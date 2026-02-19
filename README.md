@@ -57,8 +57,8 @@ cd html2pdf
 # Install dependencies
 bun install
 
-# Install Playwright browser
-bun x playwright install chromium
+# Install Playwright browser binaries (Required for PDF generation)
+bunx playwright install chromium
 ```
 
 ### Development
