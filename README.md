@@ -69,6 +69,17 @@ bun run dev
 
 The server will start at `http://localhost:3000`.
 
+### Production Build
+
+You can compile the app into a standalone binary:
+
+```bash
+bun run build
+bun run start
+```
+
+This produces a `./server` executable that you can run directly.
+
 ---
 
 ## 📖 API Reference
