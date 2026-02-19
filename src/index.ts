@@ -46,7 +46,8 @@ const app = new Elysia()
           },
           {
             name: "Resume",
-            description: "View and download the developer resume as HTML or PDF",
+            description:
+              "View and download the developer resume as HTML or PDF",
           },
           {
             name: "Health",
@@ -54,7 +55,10 @@ const app = new Elysia()
           },
         ],
       },
-    })
+      scalar: {
+        darkMode: true,
+      },
+    }),
   )
 
   // ── Static files (public/) ───────────────────────────────────────────────
@@ -81,7 +85,7 @@ const app = new Elysia()
         description: "Returns service status and a map of available endpoints.",
         tags: ["Health"],
       },
-    }
+    },
   )
 
   // ── PDF routes ───────────────────────────────────────────────────────────
@@ -97,16 +101,16 @@ const app = new Elysia()
   .listen(3000);
 
 console.log(
-  `🦊 html2pdf running at  http://${app.server?.hostname}:${app.server?.port}`
+  `🦊 html2pdf running at  http://${app.server?.hostname}:${app.server?.port}`,
 );
 console.log(
-  `📚 API docs at          http://${app.server?.hostname}:${app.server?.port}/docs`
+  `📚 API docs at          http://${app.server?.hostname}:${app.server?.port}/docs`,
 );
 console.log(
-  `📄 Resume HTML at       http://${app.server?.hostname}:${app.server?.port}/resume`
+  `📄 Resume HTML at       http://${app.server?.hostname}:${app.server?.port}/resume`,
 );
 console.log(
-  `🖨  Resume PDF at        http://${app.server?.hostname}:${app.server?.port}/resume.pdf`
+  `🖨  Resume PDF at        http://${app.server?.hostname}:${app.server?.port}/resume.pdf`,
 );
 
 export type App = typeof app;
