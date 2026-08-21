@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { generatePdfFromUrl, generatePdfFromHtml } from "../lib/pdf";
 import { readCache, writeCache } from "../lib/cache";
+import { isAuthorized, unauthorizedResponse } from "../lib/auth";
 
 // ---------------------------------------------------------------------------
 // Schema validation types
@@ -99,6 +100,9 @@ function pdfResponse(buffer: Buffer, filename = "document.pdf"): Response {
 // ---------------------------------------------------------------------------
 
 export const pdfRoute = new Elysia({ prefix: "/pdf" })
+  .onBeforeHandle(({ request }) => {
+    if (!isAuthorized(request)) return unauthorizedResponse();
+  })
 
   /**
    * GET /pdf/from-url

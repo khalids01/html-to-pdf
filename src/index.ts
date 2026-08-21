@@ -1,9 +1,5 @@
 import { Elysia, t } from "elysia";
 import { openapi } from "@elysiajs/openapi";
-import { staticPlugin } from "@elysiajs/static";
-
-import { pdfRoute } from "./routes/pdf";
-import { resumeRoute } from "./routes/resume";
 import { resumePdfRoute } from "./routes/resume-pdf";
 
 // ---------------------------------------------------------------------------
@@ -21,16 +17,15 @@ const app = new Elysia()
           title: "html2pdf API",
           version: "1.0.0",
           description:
-            "A professional-grade HTML → PDF microservice built with **Bun** and **Elysia**.\n\n" +
+            "An internal, authenticated resume PDF renderer built with **Bun** and **Elysia**.\n\n" +
             "### Features\n" +
-            "- Convert any **public URL** to a pixel-perfect PDF via Playwright\n" +
-            "- Convert **raw HTML strings** to PDF\n" +
-            "- Smart **filesystem cache** to avoid redundant browser launches\n" +
-            "- Download your **resume** as a beautifully rendered PDF\n\n" +
+            "- Render approved portfolio resume variants via Playwright\n" +
+            "- Require an internal bearer token for PDF operations\n" +
+            "- Persist a filesystem cache to avoid redundant browser launches\n\n" +
             "### How it works\n" +
             "1. A headless **Chromium** browser is launched (singleton, reused across requests)\n" +
             "2. `page.emulateMedia({ media: 'print' })` is called so `@media print` CSS fires\n" +
-            "3. The page navigates and waits for `networkidle` (all fonts / images loaded)\n" +
+            "3. The configured portfolio resume page is loaded with print media enabled\n" +
             "4. `page.pdf()` captures an A4 PDF with zero margins so your layout controls spacing\n" +
             "5. The PDF is cached on disk; subsequent requests for the same resource are instant",
           contact: {
@@ -41,13 +36,11 @@ const app = new Elysia()
         tags: [
           {
             name: "PDF",
-            description:
-              "Convert URLs or raw HTML to PDF files using headless Chromium",
+            description: "Authenticated internal PDF operations using headless Chromium",
           },
           {
             name: "Resume",
-            description:
-              "View and download the developer resume as HTML or PDF",
+            description: "Render and invalidate approved portfolio resume PDFs",
           },
           {
             name: "Health",
@@ -61,9 +54,6 @@ const app = new Elysia()
     }),
   )
 
-  // ── Static files (public/) ───────────────────────────────────────────────
-  .use(staticPlugin({ prefix: "/" }))
-
   // ── Health ───────────────────────────────────────────────────────────────
   .get(
     "/",
@@ -73,10 +63,8 @@ const app = new Elysia()
       status: "ok",
       docs: "/docs",
       endpoints: {
-        resume_html: "/resume",
-        resume_pdf: "/resume.pdf",
-        pdf_from_url: "/pdf/from-url?url=<url>",
-        pdf_from_html: "POST /pdf/from-html",
+        resume_pdf: "POST /internal/resume/pdf",
+        invalidate_resume_cache: "POST /internal/resume/cache/invalidate",
       },
     }),
     {
@@ -88,13 +76,7 @@ const app = new Elysia()
     },
   )
 
-  // ── PDF routes ───────────────────────────────────────────────────────────
-  .use(pdfRoute)
-
-  // ── Resume HTML ──────────────────────────────────────────────────────────
-  .use(resumeRoute)
-
-  // ── Resume PDF ───────────────────────────────────────────────────────────
+  // ── Authenticated portfolio resume PDF routes ─────────────────────────────
   .use(resumePdfRoute)
 
   // ── Start ────────────────────────────────────────────────────────────────
@@ -107,10 +89,7 @@ console.log(
   `📚 API docs at          http://${app.server?.hostname}:${app.server?.port}/docs`,
 );
 console.log(
-  `📄 Resume HTML at       http://${app.server?.hostname}:${app.server?.port}/resume`,
-);
-console.log(
-  `🖨  Resume PDF at        http://${app.server?.hostname}:${app.server?.port}/resume.pdf`,
+  `🖨  Internal resume PDF at http://${app.server?.hostname}:${app.server?.port}/internal/resume/pdf`,
 );
 
 export type App = typeof app;

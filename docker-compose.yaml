@@ -1,0 +1,31 @@
+services:
+  html-to-pdf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: html-to-pdf:latest
+
+    env_file:
+      - .env
+
+    expose:
+      - "3000"
+
+    volumes:
+      - pdf-cache:/app/tmp/pdf-cache
+
+    restart: unless-stopped
+
+    networks:
+      - dokploy-network
+
+    labels:
+      - traefik.enable=false
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  pdf-cache:

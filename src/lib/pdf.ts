@@ -12,6 +12,9 @@ async function getBrowser(): Promise<Browser> {
 
   _browser = await chromium.launch({
     headless: true,
+    ...(process.env.CHROMIUM_EXECUTABLE_PATH
+      ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH }
+      : {}),
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -43,6 +46,8 @@ export interface GeneratePdfOptions {
   };
   /** Extra time (ms) to wait after networkidle before capturing – default 500 */
   extraWaitMs?: number;
+  /** Navigation readiness target. Resume pages use "load" to ignore unrelated polling. */
+  waitUntil?: "load" | "domcontentloaded" | "networkidle";
 }
 
 /**
@@ -58,6 +63,7 @@ export async function generatePdfFromUrl(
     printBackground = true,
     margin = { top: "0", right: "0", bottom: "0", left: "0" },
     extraWaitMs = 500,
+    waitUntil = "networkidle",
   } = opts;
 
   const browser = await getBrowser();
@@ -68,7 +74,7 @@ export async function generatePdfFromUrl(
     await page.emulateMedia({ media: "print" });
 
     // Navigate and wait until the network has gone idle (fonts, images loaded)
-    await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
+    await page.goto(url, { waitUntil, timeout: 30_000 });
 
     // Optional extra settle time for web-fonts / JS-driven content
     if (extraWaitMs > 0) {

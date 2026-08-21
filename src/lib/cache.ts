@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, statSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, statSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from "fs";
 import { join } from "path";
 
 const CACHE_DIR = join(process.cwd(), "tmp", "pdf-cache");
@@ -57,4 +57,19 @@ export function getCacheMtime(key: string): number | undefined {
   const path = getCachePath(key);
   if (!existsSync(path)) return undefined;
   return statSync(path).mtimeMs;
+}
+
+export function clearCacheByPrefix(prefix: string): number {
+  if (!existsSync(CACHE_DIR)) return 0;
+
+  const safePrefix = prefix.replace(/[^a-z0-9_-]/gi, "_");
+  let cleared = 0;
+
+  for (const file of readdirSync(CACHE_DIR)) {
+    if (!file.startsWith(safePrefix) || !file.endsWith(".pdf")) continue;
+    unlinkSync(join(CACHE_DIR, file));
+    cleared += 1;
+  }
+
+  return cleared;
 }
