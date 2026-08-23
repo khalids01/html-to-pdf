@@ -4,7 +4,9 @@ import { generatePdfFromUrl } from "../lib/pdf";
 import { isAuthorized, unauthorizedResponse } from "../lib/auth";
 
 const layouts = ["ats-standard", "engineering-pro", "senior-compact", "eu-professional", "modern-split"] as const;
-const cacheVersion = "resume-renderer-v1";
+const densities = ["compact", "standard", "comfortable"] as const;
+const pageSizes = ["a4", "letter"] as const;
+const cacheVersion = "resume-renderer-v2";
 const portfolioOrigin = process.env.PORTFOLIO_RESUME_ORIGIN?.replace(/\/$/, "");
 
 if (!portfolioOrigin) {
@@ -14,6 +16,8 @@ if (!portfolioOrigin) {
 const generateBody = t.Object({
   variant: t.String({ minLength: 1, maxLength: 100, pattern: "^[a-z0-9-]+$" }),
   layout: t.Union(layouts.map((layout) => t.Literal(layout))),
+  density: t.Union(densities.map((density) => t.Literal(density))),
+  pageSize: t.Union(pageSizes.map((pageSize) => t.Literal(pageSize))),
   version: t.String({ minLength: 1, maxLength: 128 }),
 });
 
@@ -21,9 +25,10 @@ const invalidateBody = t.Object({
   variant: t.Optional(t.String({ minLength: 1, maxLength: 100, pattern: "^[a-z0-9-]+$" })),
 });
 
-function resumeUrl(variant: string, layout: string) {
+function resumeUrl(variant: string, layout: string, density: string, pageSize: string) {
   const path = variant === "default" ? "/resume" : `/resume/${variant}`;
-  return `${portfolioOrigin}${path}?layout=${encodeURIComponent(layout)}`;
+  const query = new URLSearchParams({ layout, density, page: pageSize });
+  return `${portfolioOrigin}${path}?${query.toString()}`;
 }
 
 function pdfResponse(pdf: Buffer, cache: "HIT" | "MISS") {
@@ -42,16 +47,15 @@ export const resumePdfRoute = new Elysia({ prefix: "/internal/resume" })
     if (!isAuthorized(request)) return unauthorizedResponse();
   })
   .post("/pdf", async ({ body }) => {
-    const cacheKey = `resume_${body.variant}_${body.layout}_${body.version}_${cacheVersion}`;
+    const cacheKey = `resume_${body.variant}_${body.layout}_${body.density}_${body.pageSize}_${body.version}_${cacheVersion}`;
     const cached = readCache(cacheKey);
     if (cached.hit && cached.data) return pdfResponse(cached.data, "HIT");
 
     const pdf = await generatePdfFromUrl({
-      url: resumeUrl(body.variant, body.layout),
-      format: "A4",
+      url: resumeUrl(body.variant, body.layout, body.density, body.pageSize),
+      format: body.pageSize === "letter" ? "Letter" : "A4",
       printBackground: true,
       margin: { top: "0", right: "0", bottom: "0", left: "0" },
-      waitUntil: "load",
       extraWaitMs: 500,
     });
     writeCache(cacheKey, pdf);
