@@ -99,16 +99,25 @@ function pdfResponse(buffer: Buffer, filename = "document.pdf"): Response {
 // Route group
 // ---------------------------------------------------------------------------
 
-export const pdfRoute = new Elysia({ prefix: "/pdf" })
-  .onBeforeHandle(({ request }) => {
-    if (!isAuthorized(request)) return unauthorizedResponse();
-  })
+type PdfRouteDependencies = {
+  generateFromUrl?: typeof generatePdfFromUrl;
+  generateFromHtml?: typeof generatePdfFromHtml;
+};
+
+export function createPdfRoute({
+  generateFromUrl = generatePdfFromUrl,
+  generateFromHtml = generatePdfFromHtml,
+}: PdfRouteDependencies = {}) {
+  return new Elysia({ prefix: "/pdf" })
+    .onBeforeHandle(({ request }) => {
+      if (!isAuthorized(request)) return unauthorizedResponse();
+    })
 
   /**
    * GET /pdf/from-url
    * Convert any public URL to PDF with smart FS caching.
    */
-  .get(
+    .get(
     "/from-url",
     async ({ query }) => {
       const {
@@ -139,7 +148,7 @@ export const pdfRoute = new Elysia({ prefix: "/pdf" })
       }
 
       // Cache MISS – generate via Playwright
-      const pdf = await generatePdfFromUrl({
+      const pdf = await generateFromUrl({
         url,
         format: format as "A4" | "Letter" | "Legal" | "A3" | "A5",
         printBackground,
@@ -166,7 +175,7 @@ export const pdfRoute = new Elysia({ prefix: "/pdf" })
    * POST /pdf/from-html
    * Accept raw HTML in the request body and return a PDF.
    */
-  .post(
+    .post(
     "/from-html",
     async ({ body }) => {
       const {
@@ -181,7 +190,7 @@ export const pdfRoute = new Elysia({ prefix: "/pdf" })
         ? { top: margin, right: margin, bottom: margin, left: margin }
         : { top: "0", right: "0", bottom: "0", left: "0" };
 
-      const pdf = await generatePdfFromHtml(html, {
+      const pdf = await generateFromHtml(html, {
         format: format as "A4" | "Letter" | "Legal" | "A3" | "A5",
         printBackground: background,
         margin: marginValue,
@@ -200,3 +209,6 @@ export const pdfRoute = new Elysia({ prefix: "/pdf" })
       },
     }
   );
+}
+
+export const pdfRoute = createPdfRoute();

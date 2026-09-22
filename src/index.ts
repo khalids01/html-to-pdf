@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { openapi } from "@elysiajs/openapi";
 import { resumePdfRoute } from "./routes/resume-pdf";
+import { pdfRoute } from "./routes/pdf";
 
 // ---------------------------------------------------------------------------
 // App
@@ -17,9 +18,10 @@ const app = new Elysia()
           title: "html2pdf API",
           version: "1.0.0",
           description:
-            "An internal, authenticated resume PDF renderer built with **Bun** and **Elysia**.\n\n" +
+            "An internal, authenticated HTML and resume PDF renderer built with **Bun** and **Elysia**.\n\n" +
             "### Features\n" +
             "- Render approved portfolio resume variants via Playwright\n" +
+            "- Render self-contained HTML documents supplied by trusted callers\n" +
             "- Require an internal bearer token for PDF operations\n" +
             "- Persist a filesystem cache to avoid redundant browser launches\n\n" +
             "### How it works\n" +
@@ -63,6 +65,7 @@ const app = new Elysia()
       status: "ok",
       docs: "/docs",
       endpoints: {
+        html_pdf: "POST /pdf/from-html",
         resume_pdf: "POST /internal/resume/pdf",
         invalidate_resume_cache: "POST /internal/resume/cache/invalidate",
       },
@@ -79,6 +82,9 @@ const app = new Elysia()
   // ── Authenticated portfolio resume PDF routes ─────────────────────────────
   .use(resumePdfRoute)
 
+  // ── Authenticated general HTML/URL PDF routes ─────────────────────────────
+  .use(pdfRoute)
+
   // ── Start ────────────────────────────────────────────────────────────────
   .listen(3000);
 
@@ -90,6 +96,9 @@ console.log(
 );
 console.log(
   `🖨  Internal resume PDF at http://${app.server?.hostname}:${app.server?.port}/internal/resume/pdf`,
+);
+console.log(
+  `📄 HTML to PDF at       http://${app.server?.hostname}:${app.server?.port}/pdf/from-html`,
 );
 
 export type App = typeof app;

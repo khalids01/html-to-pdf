@@ -1,6 +1,6 @@
 # Portfolio resume PDF renderer
 
-An internal Bun/Elysia service that renders the portfolio's existing resume pages with Playwright Chromium. It is deliberately not a public HTML-to-PDF API.
+An internal Bun/Elysia service that renders the portfolio's existing resume pages and trusted self-contained HTML documents with Playwright Chromium. It is deliberately not a public HTML-to-PDF API.
 
 ## Deployment configuration
 
@@ -32,6 +32,19 @@ Authorization: Bearer <PDF_SERVICE_SECRET_KEY>
 
 - `POST /internal/resume/pdf` with `{ "variant", "layout", "version" }`
 - `POST /internal/resume/cache/invalidate` with optional `{ "variant" }`
+- `POST /pdf/from-html` with `{ "html", "format"?, "background"?, "margin"?, "waitMs"? }`
+
+The HTML endpoint returns raw `application/pdf` bytes. It accepts the same bearer token as the resume endpoints. It is intended only for trusted internal callers because Chromium renders the submitted document.
+
+Example:
+
+```bash
+curl -o report.pdf \
+  -H "Authorization: Bearer $PDF_SERVICE_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  --data '{"html":"<!doctype html><html><body><h1>Report</h1></body></html>","format":"A4","background":true}' \
+  http://localhost:3000/pdf/from-html
+```
 
 Only canonical layouts are accepted. The service constructs the source URL from `PORTFOLIO_RESUME_ORIGIN`, so callers cannot use it to render arbitrary URLs.
 
@@ -41,6 +54,7 @@ Cache files are keyed by variant, layout, resume update version, and renderer ve
 
 ```bash
 bun install
+bunx playwright install chromium
 cp .env.example .env
 bun run dev
 ```
